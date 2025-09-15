@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: contractbot_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-contractbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-contractbot}
+      POSTGRES_DB: ${POSTGRES_DB:-contractbot}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    container_name: contractbot_api
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgres://contractbot:contractbot@db:5432/contractbot}
+      - PORT=3000
+      - BASE_URL=${BASE_URL:-http://localhost}
+    ports:
+      - "3000:3000"
+
+  caddy:
+    image: caddy:2
+    container_name: contractbot_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - EMAIL=${EMAIL:-admin@example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - api
+
+volumes:
+  db_data:
