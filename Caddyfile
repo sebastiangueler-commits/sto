@@ -1,0 +1,15 @@
+{
+    email {env.EMAIL}
+}
+
+{env.DOMAIN} {
+    encode gzip
+    @api host {env.DOMAIN}
+    handle @api {
+        reverse_proxy api:3000
+    }
+    log {
+        output stdout
+        format console
+    }
+}
